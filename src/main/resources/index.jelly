@@ -1,0 +1,6 @@
+<f:entry name="goalType" title="Choose Goal Type" field="goalType">
+    <select name="goalType">
+        <f:option value="buildGoal">Build Goal</f:option>
+        <f:option value="findBugsGoal">FindBugs goal</f:option>
+    </select>
+</f:entry>
