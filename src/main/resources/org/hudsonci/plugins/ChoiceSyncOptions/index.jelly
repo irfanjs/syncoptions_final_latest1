@@ -1,30 +1,19 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:s="/lib/samples">
-<f:entry title="${%Perforce Sync Option}">
+<f:entry>
 <div name="parameter">
-<table>
-<input type="hidden" name="name" value="${it.name}"/>
-<f:dropdownList name="syncOption">
-  <j:forEach var="option" items="${it.syncOptions}">
-    <f:dropdownListBlock title="${option}" value="${option}">
-    </f:dropdownListBlock>
-    
-    <j:if test="${option.equals('Force Sync')}">
-               <f:entry title="View">
-                  <f:textbox name="drive" value="${it.txtbx}"/>
-               </f:entry>
-     </j:if>
-     <j:if test="${option.equals('Sync based on Change-list')}">
-               <f:entry title="View">
-                  <f:textbox name="drive" value="${it.txtbx}"/>
-               </f:entry>
-     </j:if>
-    
-  </j:forEach>
-</f:dropdownList>
-
-</table>
+        <input type="hidden" name="name" value="${it.name}" /><!--
+        <f:dropdownList name="option" title="Sync Option">
+          
+          <j:forEach var="descriptor" items="${it.optionDescriptors}" varStatus="loop">
+            <f:dropdownListBlock title="${descriptor.displayName}" value="${loop.index}"
+                                 staplerClass="${descriptor.clazz.name}">
+          
+              <st:include page="${descriptor.configPage}" from="${descriptor}"/>
+            </f:dropdownListBlock>
+          </j:forEach>
+        </f:dropdownList> -->
+        <f:dropdownDescriptorSelector title="Sync Option" field="option" descriptors="${it.optionDescriptors}"/>
 </div>
 </f:entry>
-
 </j:jelly>

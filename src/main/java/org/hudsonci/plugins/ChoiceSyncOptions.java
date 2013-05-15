@@ -1,10 +1,16 @@
 package org.hudsonci.plugins;
 
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 
+import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.ExtensionPoint;
 import hudson.model.Describable;
@@ -12,6 +18,10 @@ import hudson.model.ParameterValue;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.ParameterDefinition;
+import hudson.plugins.perforce.PerforceSCM;
+import hudson.util.XStream2;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ChoiceSyncOptions extends ParameterDefinition {
 
@@ -21,30 +31,38 @@ public class ChoiceSyncOptions extends ParameterDefinition {
     public static final String CHANGE_SYNC = "Sync based on Change-list";
     public static final String LBL_SYNC = "Sync based on Label";
     
-    public String label;
+    //public String label;
     
     @DataBoundConstructor
     public ChoiceSyncOptions(String name) {
-        super("sync-parameter");
+        super("sync-parameter");        
     }
 
     @Override
     public ParameterValue createValue(StaplerRequest req, JSONObject json) {
-    	System.err.println("createvalue: " + label);
-        ChoiceSyncParameterValue value = req.bindJSON(ChoiceSyncParameterValue.class, json);
-        System.err.println("Createdvalue: " + json);
-        System.err.println("Parameters: " + req.getParameterMap());
-        value.setSyncOption(req.getParameter("syncOption"));
-        return value;
+    	// stapler-class in form data tells Stapler which Fruit subclass to use
+        Option option = new Normal();
+        try {
+            option = req.bindJSON(Option.class, req.getSubmittedForm().getJSONObject("option"));
+            setSelectedOption(option);
+        } catch (ServletException ex) {
+            Logger.getLogger(ChoiceSyncOptions.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return new ChoiceSyncParameterValue("sync-parameter", option);
     }
+    
+    //public String getTxtbx() {
+//		return label;
+    	
+  //  }
     
     public String[] getSyncOptions(){
-        return new String[]{NORMAL_SYNC, DISABLE_SYNC, FORCE_SYNC};
+        return new String[]{NORMAL_SYNC, DISABLE_SYNC, FORCE_SYNC,CHANGE_SYNC,LBL_SYNC};
     }
     
-  //  public String gettxtbx(){
-   //     return new String("label");
-   // }
+    public DescriptorExtensionList<Option,Descriptor<Option>> getOptionDescriptors() {
+        return Hudson.getInstance().<Option,Descriptor<Option>>getDescriptorList(Option.class);
+    }
     
     @Override
     public ParameterValue createValue(StaplerRequest sr) {
@@ -59,4 +77,124 @@ public class ChoiceSyncOptions extends ParameterDefinition {
             return "Enable Perforce sync options at runtime";
         }
     }
+    
+    private Option selectedOption = null;
+    
+    public Option getSelectedOption() {
+        return selectedOption;
+    }
+    
+    public void setSelectedOption(Option selectedOption) {
+        this.selectedOption = selectedOption;
+    }
+    
+    public static abstract class Option implements ExtensionPoint, Describable<Option> {
+        protected String name;
+        protected Option(String name) { this.name = name; }
+
+        public Descriptor<Option> getDescriptor() {
+            return Hudson.getInstance().getDescriptor(getClass());
+        }
+        
+        public abstract void applyPerforceOptions(PerforceSCM scm);
+    }
+
+    public static class OptionDescriptor extends Descriptor<Option> {
+        public OptionDescriptor(Class<? extends Option> clazz) {
+            super(clazz);
+        }
+        public String getDisplayName() {
+            return clazz.getSimpleName();
+        }
+    }
+
+    public static class Normal extends Option {
+        @DataBoundConstructor public Normal() {
+            super("Normal");
+        }
+        @Extension public static final OptionDescriptor D = new OptionDescriptor(Normal.class);
+
+        @Override
+        public void applyPerforceOptions(PerforceSCM scm) {
+            scm.setForceSync(false);
+            scm.setDisableSyncOnly(false);
+            scm.setP4Label(null);
+        }
+    }
+    
+    public static class Disable extends Option {
+        @DataBoundConstructor public Disable() {
+            super("Disable");
+        }
+        @Extension public static final OptionDescriptor D = new OptionDescriptor(Disable.class);
+
+        @Override
+        public void applyPerforceOptions(PerforceSCM scm) {
+            scm.setForceSync(false);
+            scm.setDisableSyncOnly(true);
+            scm.setP4Label(null);
+        }
+    }
+
+    public static class Force extends Option {
+     //   private String label;
+        @DataBoundConstructor public Force() {
+            super("Force");
+            //this.label = label;
+        }
+      //  public String getLabel() {
+       //     return label;
+       // }
+        @Extension public static final OptionDescriptor D = new OptionDescriptor(Force.class);
+
+        @Override
+        public void applyPerforceOptions(PerforceSCM scm) {
+            scm.setForceSync(true);
+            scm.setDisableSyncOnly(false);
+            scm.setP4Label(null);
+        }
+    }
+    
+   // public static class ChangeList extends Option {
+    //    private String label;
+    //    @DataBoundConstructor public ChangeList(String label) {
+     //       super("ChangeList");
+     //       this.label = label;
+     //   }
+     //   public String getLabel() {
+     //       return label;
+     //   }
+     //   @Extension public static final OptionDescriptor D = new OptionDescriptor(ChangeList.class);
+
+      //  @Override
+     //   public void applyPerforceOptions(PerforceSCM scm) {
+     //       scm.setForceSync(true);
+     //       scm.setDisableSyncOnly(false);
+     //       scm.setP4Label(label);
+    //    }
+   // }
+    
+    public static class SyncLabel extends Option {
+        private String label = null;
+        @Extension 
+        public static final OptionDescriptor D = new OptionDescriptor(SyncLabel.class);
+        @DataBoundConstructor public SyncLabel(String label) {
+            super(label);
+            this.label = label;
+        }
+        public String getLabel() {
+            return label;
+        }
+        //@Extension public static final OptionDescriptor D = new OptionDescriptor(SyncLabel.class);
+
+        @Override
+        public void applyPerforceOptions(PerforceSCM scm) {
+            scm.setForceSync(false);
+            scm.setDisableSyncOnly(false);
+            scm.setP4Label(label);
+                 
+        }
+       
+    }
+    
 }

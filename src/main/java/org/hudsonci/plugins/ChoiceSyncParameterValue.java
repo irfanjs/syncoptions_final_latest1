@@ -14,19 +14,19 @@ import hudson.plugins.perforce.PerforceRepositoryBrowser;
 
 public class ChoiceSyncParameterValue extends ParameterValue {
 
-    private String syncOption;
+    private ChoiceSyncOptions.Option syncOption;
 
     @DataBoundConstructor
-    public ChoiceSyncParameterValue(String name, String syncOption) {
+    public ChoiceSyncParameterValue(String name, ChoiceSyncOptions.Option syncOption) {
         super(name);
         this.syncOption = syncOption;
     }
 
     public String getSyncOption() {
-        return syncOption;
+        return syncOption.toString();
     }
 
-    public void setSyncOption(String syncOption) {
+    public void setSyncOption(ChoiceSyncOptions.Option syncOption) {
         this.syncOption = syncOption;
     }
 
@@ -44,26 +44,7 @@ public class ChoiceSyncParameterValue extends ParameterValue {
     		// Use perforceSCM variable to alter the current SCM.
     		PerforceSCM perforceSCM = (PerforceSCM) scm;
 	    	
-	    	if (ChoiceSyncOptions.NORMAL_SYNC.equals(syncOption)) {
-	    		perforceSCM.setForceSync(false);
-	    		perforceSCM.setDisableSyncOnly(false);
-	
-	        }
-	        if (ChoiceSyncOptions.DISABLE_SYNC.equals(syncOption)) {
-	        	perforceSCM.setForceSync(false);
-	        	perforceSCM.setDisableSyncOnly(true);
-	
-	        }
-	        if (ChoiceSyncOptions.FORCE_SYNC.equals(syncOption)) {
-	        		perforceSCM.setForceSync(true);
-	        		perforceSCM.setDisableSyncOnly(false);
-	        }
-	      //  if (ChoiceSyncOptions.LBL_SYNC.equals(syncOption)) {
-        	//       perforceSCM.setP4Label("Carrera-2013-05-04_11-43-42-697");
-	        	//	perforceSCM.setForceSync(true);
-        	//	perforceSCM.setDisableSyncOnly(false);
-        //}
-    	}	
-    	
+	    	syncOption.applyPerforceOptions(perforceSCM);
+        }
     }
 }
