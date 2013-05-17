@@ -176,16 +176,14 @@ public class ChoiceSyncOptions extends ParameterDefinition {
     
     public static class SyncLabel extends Option {
         private String label = null;
-        @Extension 
-        public static final OptionDescriptor D = new OptionDescriptor(SyncLabel.class);
         @DataBoundConstructor public SyncLabel(String label) {
-            super(label);
+            super("SyncLabel");
             this.label = label;
         }
         public String getLabel() {
             return label;
         }
-        //@Extension public static final OptionDescriptor D = new OptionDescriptor(SyncLabel.class);
+        @Extension public static final OptionDescriptor D = new OptionDescriptor(SyncLabel.class);
 
         @Override
         public void applyPerforceOptions(PerforceSCM scm) {
