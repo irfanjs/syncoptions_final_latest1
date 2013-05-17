@@ -179,7 +179,7 @@ public class ChoiceSyncOptions extends ParameterDefinition {
         @Extension 
         public static final OptionDescriptor D = new OptionDescriptor(SyncLabel.class);
         @DataBoundConstructor public SyncLabel(String label) {
-            super(label);
+            super("SyncLabel");
             this.label = label;
         }
         public String getLabel() {
